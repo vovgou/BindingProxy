@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30413.136
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BindingProxy", "BindingProxy\BindingProxy.csproj", "{4693D1DE-8AF9-4807-895F-EB79F7F83D2E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BindingProxy.Fody", "BindingProxy.Fody\BindingProxy.Fody.csproj", "{3FBE1DD2-C33F-45AB-9CFC-3255A7E80BE8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4693D1DE-8AF9-4807-895F-EB79F7F83D2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4693D1DE-8AF9-4807-895F-EB79F7F83D2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4693D1DE-8AF9-4807-895F-EB79F7F83D2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4693D1DE-8AF9-4807-895F-EB79F7F83D2E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3FBE1DD2-C33F-45AB-9CFC-3255A7E80BE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3FBE1DD2-C33F-45AB-9CFC-3255A7E80BE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3FBE1DD2-C33F-45AB-9CFC-3255A7E80BE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3FBE1DD2-C33F-45AB-9CFC-3255A7E80BE8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C9751EF1-AE04-4707-BE45-A237193FAC8F}
+	EndGlobalSection
+EndGlobal
