@@ -40,15 +40,15 @@ namespace BindingProxy.Fody
 
         protected TypeDefinition CreateMethodInvoker(TypeDefinition sourceTypeDef, string methodName, List<MethodDefinition> methods)
         {
-            var sourceTypeRef = ModuleDefinition.ImportReference(sourceTypeDef);
+            var sourceTypeRef = ModuleDefinition.ImportReference(sourceTypeDef.MakeGeneric());
             var genericBaseTypeDef = FindTypeDefinition(WOVEN_METHOD_INVOKER_NAME);
-            var genericInstanceBaseType = genericBaseTypeDef.MakeGenericInstanceType(sourceTypeDef);
-            var genericInstanceBaseTypeRef = ModuleDefinition.ImportReference(genericInstanceBaseType);
-            var sourceFieldRef = ModuleDefinition.ImportReference(genericBaseTypeDef.Fields.FirstOrDefault(x => x.Name == "source")).MakeHostInstanceGeneric(sourceTypeDef);
+            var genericInstanceBaseTypeRef = ModuleDefinition.ImportReference(genericBaseTypeDef).MakeGenericInstanceType(sourceTypeRef);
+            var sourceFieldRef = ModuleDefinition.ImportReference(genericBaseTypeDef.Fields.FirstOrDefault(x => x.Name == "source")).MakeHostInstanceGeneric(sourceTypeRef);
             var baseCtorRef = ModuleDefinition.ImportReference(genericBaseTypeDef.GetConstructors().FirstOrDefault()).MakeHostInstanceGeneric(sourceTypeRef);
 
             const TypeAttributes typeAttributes = TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.BeforeFieldInit;
             var typeDef = new TypeDefinition(null, methodName + METHOD_INVOKER_NAME_SUFFIX, typeAttributes, genericInstanceBaseTypeRef);
+            typeDef.CloneGenericParameters(sourceTypeDef);
 
             List<MethodDefinition> invokers = new List<MethodDefinition>();
             //add constructor method.
@@ -210,7 +210,7 @@ namespace BindingProxy.Fody
                 else
                     instructions.Add(Instruction.Create(OpCodes.Castclass, paramType));
             }
-            instructions.Add(Instruction.Create(OpCodes.Call, method));
+            instructions.Add(Instruction.Create(OpCodes.Call, method.MakeGeneric()));
             instructions.Add(Instruction.Create(OpCodes.Stloc_2));
             instructions.Add(Instruction.Create(OpCodes.Br_S, end));
             return instructions;
@@ -242,7 +242,7 @@ namespace BindingProxy.Fody
             {
                 instructions.Add(Instruction.Create(OpCodes.Ldarg_S, parameter));
             }
-            instructions.Add(Instruction.Create(OpCodes.Callvirt, ModuleDefinition.ImportReference(method)));
+            instructions.Add(Instruction.Create(OpCodes.Callvirt, ModuleDefinition.ImportReference(method).MakeGeneric()));
             instructions.Add(Instruction.Create(OpCodes.Nop));
             instructions.Add(Instruction.Create(OpCodes.Ldnull));
             instructions.Add(Instruction.Create(OpCodes.Stloc_0));

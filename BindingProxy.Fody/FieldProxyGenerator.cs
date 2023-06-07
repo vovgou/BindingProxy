@@ -38,23 +38,23 @@ namespace BindingProxy.Fody
         private const string FIELD_NODE_PROXY_NAME_SUFFIX = "FieldNodeProxy";
         protected TypeDefinition CreateFieldProxy(TypeDefinition sourceTypeDef, FieldDefinition field)
         {
-            var sourceTypeRef = ModuleDefinition.ImportReference(sourceTypeDef);
+            var sourceTypeRef = ModuleDefinition.ImportReference(sourceTypeDef.MakeGeneric());
             var fieldTypeRef = ModuleDefinition.ImportReference(field.FieldType);
             var genericBaseTypeDef = FindTypeDefinition(WOVEN_FIELD_NODE_PROXY_NAME);
-            var genericInstanceBaseType = genericBaseTypeDef.MakeGenericInstanceType(sourceTypeDef, ModuleDefinition.ImportReference(field.FieldType));
-            var genericInstanceBaseTypeRef = ModuleDefinition.ImportReference(genericInstanceBaseType);
+            var genericInstanceBaseTypeRef = ModuleDefinition.ImportReference(genericBaseTypeDef).MakeGenericInstanceType(sourceTypeRef, fieldTypeRef);
             var sourceFieldRef = ModuleDefinition.ImportReference(genericBaseTypeDef.Fields.FirstOrDefault(x => x.Name == "source")).MakeHostInstanceGeneric(sourceTypeRef, fieldTypeRef);
             var baseCtorRef = ModuleDefinition.ImportReference(genericBaseTypeDef.GetConstructors().FirstOrDefault()).MakeHostInstanceGeneric(sourceTypeRef, fieldTypeRef);
 
             const TypeAttributes typeAttributes = TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.BeforeFieldInit;
             var typeDef = new TypeDefinition(null, field.Name + FIELD_NODE_PROXY_NAME_SUFFIX, typeAttributes, genericInstanceBaseTypeRef);
+            typeDef.CloneGenericParameters(sourceTypeDef);
 
             //add constructor method.
             AddCtorMethod(typeDef, baseCtorRef, sourceTypeRef);
             //add GetValue method.
             AddGetMethod(typeDef, sourceFieldRef, field);
             //add SetValue method.
-            AddSetMethod(typeDef, sourceFieldRef, sourceTypeDef, field);
+            AddSetMethod(typeDef, sourceFieldRef, sourceTypeRef, field);
             AddTypeAttributes(typeDef);
             return typeDef;
         }
@@ -86,7 +86,7 @@ namespace BindingProxy.Fody
             body.Variables.Add(new VariableDefinition(valueTypeRef));
             body.InitLocals = true;
 
-            var fieldRef = ModuleDefinition.ImportReference(field);
+            var fieldRef = ModuleDefinition.ImportReference(field).MakeGeneric();
             var instructions = body.Instructions;
             var ldloc = Instruction.Create(OpCodes.Ldloc_0);
             instructions.Add(Instruction.Create(OpCodes.Nop));
@@ -101,7 +101,7 @@ namespace BindingProxy.Fody
             typeDef.Methods.Add(methodDef);
         }
 
-        private void AddSetMethod(TypeDefinition typeDef, FieldReference sourceFieldRef, TypeDefinition sourceTypeDef, FieldDefinition field)
+        private void AddSetMethod(TypeDefinition typeDef, FieldReference sourceFieldRef, TypeReference sourceTypeRef, FieldDefinition field)
         {
             TypeReference valueTypeRef = ModuleDefinition.ImportReference(field.FieldType);
             const MethodAttributes attributes = MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual;
@@ -112,7 +112,7 @@ namespace BindingProxy.Fody
             var instructions = body.Instructions;
             if (field.IsInitOnly)
             {
-                var message = string.Format("{0}.{1} is read-only or inaccessible.", sourceTypeDef.Name, field.Name);
+                var message = string.Format("{0}.{1} is read-only or inaccessible.", sourceTypeRef.DisplayName(), field.Name);
                 var exception = ModuleDefinition.ImportReference(typeof(MemberAccessException).GetConstructor(new Type[] { typeof(string) }));
                 instructions.Add(Instruction.Create(OpCodes.Nop));
                 instructions.Add(Instruction.Create(OpCodes.Ldstr, message));
@@ -121,7 +121,7 @@ namespace BindingProxy.Fody
             }
             else
             {
-                var fieldRef = ModuleDefinition.ImportReference(field);
+                var fieldRef = ModuleDefinition.ImportReference(field).MakeGeneric();
                 instructions.Add(Instruction.Create(OpCodes.Nop));
                 instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
                 instructions.Add(Instruction.Create(OpCodes.Ldfld, sourceFieldRef));

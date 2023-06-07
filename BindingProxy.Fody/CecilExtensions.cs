@@ -41,6 +41,8 @@ namespace BindingProxy.Fody
             return reference;
         }
 
+
+
         public static MethodReference MakeHostInstanceGeneric(
         this MethodReference self,
         params TypeReference[] args)
@@ -68,15 +70,6 @@ namespace BindingProxy.Fody
             return reference;
         }
 
-        public static string DisplayName(this TypeReference typeReference)
-        {
-            if (typeReference is GenericInstanceType genericInstanceType && genericInstanceType.HasGenericArguments)
-            {
-                return typeReference.Name.Split('`').First() + "<" + string.Join(", ", genericInstanceType.GenericArguments.Select(c => c.DisplayName())) + ">";
-            }
-            return typeReference.Name;
-        }
-
         public static bool IsMatch(this MethodReference methodReference, params string[] paramTypes)
         {
             if (methodReference.Parameters.Count != paramTypes.Length)
@@ -93,6 +86,88 @@ namespace BindingProxy.Fody
                 }
             }
             return true;
+        }
+
+        public static FieldReference MakeGeneric(this FieldReference self)
+        {
+            if (!self.DeclaringType.HasGenericParameters)
+                return self;
+
+            return new FieldReference(self.Name, self.FieldType, self.DeclaringType.MakeGeneric());
+        }
+
+        public static MethodReference MakeGeneric(this MethodReference self)
+        {
+            if (!self.DeclaringType.HasGenericParameters)
+                return self;
+
+            var reference = new MethodReference(
+                self.Name,
+                self.ReturnType,
+                self.DeclaringType.MakeGeneric())
+            {
+                HasThis = self.HasThis,
+                ExplicitThis = self.ExplicitThis,
+                CallingConvention = self.CallingConvention
+            };
+
+            foreach (var parameter in self.Parameters)
+            {
+                reference.Parameters.Add(new ParameterDefinition(parameter.ParameterType));
+            }
+
+            foreach (var genericParam in self.GenericParameters)
+            {
+                reference.GenericParameters.Add(new GenericParameter(genericParam.Name, reference));
+            }
+
+            return reference;
+        }
+
+        public static TypeReference MakeGeneric(this TypeReference self)
+        {
+            if (!self.HasGenericParameters)
+                return self;
+
+            var genericInstanceType = new GenericInstanceType(self);
+            foreach (var parameter in self.GenericParameters)
+            {
+                genericInstanceType.GenericArguments.Add(parameter);
+            }
+            return genericInstanceType;
+        }
+
+        public static string DisplayName(this TypeReference typeReference)
+        {
+            if (typeReference is GenericInstanceType genericInstanceType && genericInstanceType.HasGenericArguments)
+            {
+                return typeReference.Name.Split('`').First() + "<" + string.Join(", ", genericInstanceType.GenericArguments.Select(c => c.DisplayName())) + ">";
+            }
+            return typeReference.Name;
+        }
+
+        public static void CloneGenericParameters(this TypeDefinition type, TypeDefinition fromType)
+        {
+            if (!fromType.HasGenericParameters)
+                return;
+
+            foreach (var genericParameter in fromType.GenericParameters)
+            {
+                var genericParam = new GenericParameter(genericParameter.Name, type);
+                genericParam.IsValueType = genericParameter.IsValueType;
+                genericParam.HasReferenceTypeConstraint = genericParameter.HasReferenceTypeConstraint;
+                genericParam.IsContravariant = genericParameter.IsContravariant;
+                genericParam.IsCovariant = genericParameter.IsCovariant;
+                genericParam.IsNonVariant = genericParameter.IsNonVariant;
+                genericParam.Attributes = genericParameter.Attributes;
+                genericParam.HasNotNullableValueTypeConstraint = genericParameter.HasNotNullableValueTypeConstraint;
+                genericParam.HasDefaultConstructorConstraint = genericParameter.HasDefaultConstructorConstraint;
+                foreach (var constraint in genericParameter.Constraints)
+                {
+                    genericParam.Constraints.Add(constraint);
+                }
+                type.GenericParameters.Add(genericParam);
+            }
         }
     }
 }

@@ -46,15 +46,24 @@ namespace BindingProxy.Fody
         public Action<string, string> Log;
         public override void Execute()
         {
-            ParseConfig();
-            foreach (var type in GetMatchingTypes())
+            try
             {
-                WeaveFields(type);
-                WeaveProperties(type);
-                WeaveMethods(type);
-                RemoveAttributes(type.Properties);
-                RemoveAttributes(type.Fields);
-                RemoveAttributes(type);
+                ParseConfig();
+                foreach (var type in GetMatchingTypes())
+                {
+                    WeaveFields(type);
+                    WeaveProperties(type);
+                    WeaveMethods(type);
+
+                    RemoveAttributes(type.Properties);
+                    RemoveAttributes(type.Fields);
+                    RemoveAttributes(type);
+                }
+            }
+            catch (Exception e)
+            {
+                this.WriteError(e.StackTrace);
+                throw e;
             }
         }
 
