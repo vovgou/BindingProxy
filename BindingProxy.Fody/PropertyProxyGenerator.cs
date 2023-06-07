@@ -88,7 +88,7 @@ namespace BindingProxy.Fody
             body.Variables.Add(new VariableDefinition(valueTypeRef));
             body.InitLocals = true;
 
-            var getMethodRef = ModuleDefinition.ImportReference(property.GetMethod).MakeGeneric();
+            var getMethodRef = property.GetMethod.MakeGeneric();// ModuleDefinition.ImportReference(property.GetMethod).MakeGeneric();
 
             var instructions = body.Instructions;
             var ldloc = Instruction.Create(OpCodes.Ldloc_0);
@@ -118,7 +118,8 @@ namespace BindingProxy.Fody
             var setMethod = property.SetMethod;
             if (setMethod != null && setMethod.IsPublic)
             {
-                var setMethodRef = ModuleDefinition.ImportReference(setMethod).MakeGeneric();
+                var setMethodRef = setMethod.MakeGeneric();// ModuleDefinition.ImportReference(setMethod).MakeGeneric();
+
                 instructions.Add(Instruction.Create(OpCodes.Nop));
                 instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
                 instructions.Add(Instruction.Create(OpCodes.Ldfld, sourceFieldRef));

@@ -86,7 +86,7 @@ namespace BindingProxy.Fody
             body.Variables.Add(new VariableDefinition(valueTypeRef));
             body.InitLocals = true;
 
-            var fieldRef = ModuleDefinition.ImportReference(field).MakeGeneric();
+            var fieldRef = field.MakeGeneric();//ModuleDefinition.ImportReference(field).MakeGeneric();
             var instructions = body.Instructions;
             var ldloc = Instruction.Create(OpCodes.Ldloc_0);
             instructions.Add(Instruction.Create(OpCodes.Nop));
@@ -121,7 +121,7 @@ namespace BindingProxy.Fody
             }
             else
             {
-                var fieldRef = ModuleDefinition.ImportReference(field).MakeGeneric();
+                var fieldRef = field.MakeGeneric();//ModuleDefinition.ImportReference(field).MakeGeneric();
                 instructions.Add(Instruction.Create(OpCodes.Nop));
                 instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
                 instructions.Add(Instruction.Create(OpCodes.Ldfld, sourceFieldRef));

@@ -48,7 +48,7 @@ namespace BindingProxy.Fody
 
             foreach (var property in type.Properties)
             {
-                if (!IsPublic(property))
+                if (property.GetMethod == null || !IsPublic(property))
                     continue;
 
                 yield return property;
