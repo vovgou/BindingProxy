@@ -51,9 +51,12 @@ namespace BindingProxy.Fody
                 ParseConfig();
                 foreach (var type in GetMatchingTypes())
                 {
-                    WeaveFields(type);
-                    WeaveProperties(type);
-                    WeaveMethods(type);
+                    bool needFinder = false;
+                    needFinder |= WeaveFields(type);
+                    needFinder |= WeaveProperties(type);
+                    needFinder |= WeaveMethods(type);
+                    if (needFinder && !type.IsAbstract)
+                        AddProxyFinder(type);
 
                     RemoveAttributes(type.Properties);
                     RemoveAttributes(type.Fields);
@@ -76,10 +79,12 @@ namespace BindingProxy.Fody
             yield return "UnityEngine";
             yield return "UnityEngine.CoreModule";
             yield return "Loxodon.Framework";
+            yield return "Loxodon.Framework.Binding.Weaving";
         }
 
-        protected void WeaveProperties(TypeDefinition typeDef)
+        protected bool WeaveProperties(TypeDefinition typeDef)
         {
+            bool ret = false;
             bool defaultWeave = this.defaultWeaveProperty | HasProxyAttribute(typeDef, PROPERTY_PROXY_ATTRIBUTE);
             var properties = this.GetProperties(typeDef);
             foreach (var property in properties)
@@ -91,12 +96,15 @@ namespace BindingProxy.Fody
                 {
                     var proxyDef = CreatePropertyProxy(typeDef, property);
                     typeDef.NestedTypes.Add(proxyDef);
+                    ret |= true;
                 }
             }
+            return ret;
         }
 
-        protected void WeaveFields(TypeDefinition typeDef)
+        protected bool WeaveFields(TypeDefinition typeDef)
         {
+            bool ret = false;
             bool defaultWeave = this.defaultWeaveField | HasProxyAttribute(typeDef, FIELD_PROXY_ATTRIBUTE);
             var fields = GetFields(typeDef);
             foreach (var field in fields)
@@ -108,12 +116,15 @@ namespace BindingProxy.Fody
                 {
                     var proxyDef = CreateFieldProxy(typeDef, field);
                     typeDef.NestedTypes.Add(proxyDef);
+                    ret |= true;
                 }
             }
+            return ret;
         }
 
-        protected void WeaveMethods(TypeDefinition typeDef)
+        protected bool WeaveMethods(TypeDefinition typeDef)
         {
+            bool ret = false;
             Dictionary<string, List<MethodDefinition>> methods = new Dictionary<string, List<MethodDefinition>>();
             foreach (var method in GetMethods(typeDef))
             {
@@ -139,9 +150,11 @@ namespace BindingProxy.Fody
                 if (list.Count <= 0)
                     continue;
 
-                var proxyDef = CreateMethodInvoker(typeDef, name, list);
+                var proxyDef = CreateMethodProxy(typeDef, name, list);
                 typeDef.NestedTypes.Add(proxyDef);
+                ret |= true;
             }
+            return ret;
         }
 
         public IEnumerable<TypeDefinition> GetMatchingTypes()
@@ -175,28 +188,36 @@ namespace BindingProxy.Fody
             return false;
         }
 
-        protected void AddTypeAttributes(TypeDefinition typeDef)
+        protected void AddTypeAttributes(IMemberDefinition member)
         {
-            var generatedConstructor = ModuleDefinition.ImportReference(typeof(GeneratedCodeAttribute)
+            if (member is TypeDefinition || member is PropertyDefinition || member is FieldDefinition || member is MethodDefinition)
+            {
+                var generatedConstructor = ModuleDefinition.ImportReference(typeof(GeneratedCodeAttribute)
                 .GetConstructor(new[]
                 {
                     typeof(string),
                     typeof(string)
                 }));
 
-            var version = typeof(ModuleWeaver).Assembly.GetName().Version.ToString();
-            var generatedAttribute = new CustomAttribute(generatedConstructor);
-            generatedAttribute.ConstructorArguments.Add(new CustomAttributeArgument(TypeSystem.StringReference, "BindingProxy.Fody"));
-            generatedAttribute.ConstructorArguments.Add(new CustomAttributeArgument(TypeSystem.StringReference, version));
-            typeDef.CustomAttributes.Add(generatedAttribute);
+                var version = typeof(ModuleWeaver).Assembly.GetName().Version.ToString();
+                var generatedAttribute = new CustomAttribute(generatedConstructor);
+                generatedAttribute.ConstructorArguments.Add(new CustomAttributeArgument(TypeSystem.StringReference, "BindingProxy.Fody"));
+                generatedAttribute.ConstructorArguments.Add(new CustomAttributeArgument(TypeSystem.StringReference, version));
+                member.CustomAttributes.Add(generatedAttribute);
+            }
+            if (member is TypeDefinition || member is PropertyDefinition || member is MethodDefinition)
+            {
+                var debuggerConstructor = ModuleDefinition.ImportReference(typeof(DebuggerNonUserCodeAttribute).GetConstructor(Type.EmptyTypes));
+                var debuggerAttribute = new CustomAttribute(debuggerConstructor);
+                member.CustomAttributes.Add(debuggerAttribute);
+            }
 
-            var debuggerConstructor = ModuleDefinition.ImportReference(typeof(DebuggerNonUserCodeAttribute).GetConstructor(Type.EmptyTypes));
-            var debuggerAttribute = new CustomAttribute(debuggerConstructor);
-            typeDef.CustomAttributes.Add(debuggerAttribute);
-
-            var preserveConstructor = ModuleDefinition.ImportReference(FindTypeDefinition(PRESERVE_ATTRIBUTE).GetConstructors().FirstOrDefault());
-            var preserveAttribute = new CustomAttribute(preserveConstructor);
-            typeDef.CustomAttributes.Add(preserveAttribute);
+            if (member is TypeDefinition)
+            {
+                var preserveConstructor = ModuleDefinition.ImportReference(FindTypeDefinition(PRESERVE_ATTRIBUTE).GetConstructors().FirstOrDefault());
+                var preserveAttribute = new CustomAttribute(preserveConstructor);
+                member.CustomAttributes.Add(preserveAttribute);
+            }
         }
 
         static void RemoveAttributes(TypeDefinition typeDef)

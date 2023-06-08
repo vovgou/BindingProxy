@@ -33,7 +33,7 @@ namespace BindingProxy.Fody
 {
     public partial class ModuleWeaver
     {
-        private const string WOVEN_PROPERTY_NODE_PROXY_NAME = "Loxodon.Framework.Binding.Proxy.Sources.Object.WovenPropertyNodeProxy`2";
+        private const string WOVEN_PROPERTY_NODE_PROXY_NAME = "Loxodon.Framework.Binding.Proxy.Sources.Weaving.WovenPropertyNodeProxy`2";
         private const string PROPERTY_NODE_PROXY_NAME_SUFFIX = "PropertyNodeProxy";
 
         protected TypeDefinition CreatePropertyProxy(TypeDefinition sourceTypeDef, PropertyDefinition property)
@@ -44,7 +44,7 @@ namespace BindingProxy.Fody
             var genericInstanceBaseTypeRef = ModuleDefinition.ImportReference(genericBaseTypeDef).MakeGenericInstanceType(sourceTypeRef, propertyTypeRef);
             var sourceFieldRef = ModuleDefinition.ImportReference(genericBaseTypeDef.Fields.FirstOrDefault(x => x.Name == "source")).MakeHostInstanceGeneric(sourceTypeRef, propertyTypeRef);
             var baseCtorRef = ModuleDefinition.ImportReference(genericBaseTypeDef.GetConstructors().FirstOrDefault()).MakeHostInstanceGeneric(sourceTypeRef, propertyTypeRef);
-            const TypeAttributes typeAttributes = TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.BeforeFieldInit;
+            const TypeAttributes typeAttributes = TypeAttributes.Class | TypeAttributes.NestedPrivate | TypeAttributes.BeforeFieldInit;
             var typeDef = new TypeDefinition(null, property.Name + PROPERTY_NODE_PROXY_NAME_SUFFIX, typeAttributes, genericInstanceBaseTypeRef);
             typeDef.CloneGenericParameters(sourceTypeDef);
 
@@ -70,7 +70,7 @@ namespace BindingProxy.Fody
             var instructions = body.Instructions;
             instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
             instructions.Add(Instruction.Create(OpCodes.Ldarg_1));
-            instructions.Add(Instruction.Create(OpCodes.Ldstr, property.Name));
+            //instructions.Add(Instruction.Create(OpCodes.Ldstr, property.Name));
             instructions.Add(Instruction.Create(OpCodes.Call, baseCtorRef));
             instructions.Add(Instruction.Create(OpCodes.Nop));
             instructions.Add(Instruction.Create(OpCodes.Nop));

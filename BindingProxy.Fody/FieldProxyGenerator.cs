@@ -34,7 +34,7 @@ namespace BindingProxy.Fody
 {
     public partial class ModuleWeaver
     {
-        private const string WOVEN_FIELD_NODE_PROXY_NAME = "Loxodon.Framework.Binding.Proxy.Sources.Object.WovenFieldNodeProxy`2";
+        private const string WOVEN_FIELD_NODE_PROXY_NAME = "Loxodon.Framework.Binding.Proxy.Sources.Weaving.WovenFieldNodeProxy`2";
         private const string FIELD_NODE_PROXY_NAME_SUFFIX = "FieldNodeProxy";
         protected TypeDefinition CreateFieldProxy(TypeDefinition sourceTypeDef, FieldDefinition field)
         {
@@ -45,12 +45,12 @@ namespace BindingProxy.Fody
             var sourceFieldRef = ModuleDefinition.ImportReference(genericBaseTypeDef.Fields.FirstOrDefault(x => x.Name == "source")).MakeHostInstanceGeneric(sourceTypeRef, fieldTypeRef);
             var baseCtorRef = ModuleDefinition.ImportReference(genericBaseTypeDef.GetConstructors().FirstOrDefault()).MakeHostInstanceGeneric(sourceTypeRef, fieldTypeRef);
 
-            const TypeAttributes typeAttributes = TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.BeforeFieldInit;
+            const TypeAttributes typeAttributes = TypeAttributes.Class | TypeAttributes.NestedPrivate | TypeAttributes.BeforeFieldInit;
             var typeDef = new TypeDefinition(null, field.Name + FIELD_NODE_PROXY_NAME_SUFFIX, typeAttributes, genericInstanceBaseTypeRef);
             typeDef.CloneGenericParameters(sourceTypeDef);
 
             //add constructor method.
-            AddCtorMethod(typeDef, baseCtorRef, sourceTypeRef);
+            AddCtorMethod(typeDef, baseCtorRef, sourceTypeRef, field);
             //add GetValue method.
             AddGetMethod(typeDef, sourceFieldRef, field);
             //add SetValue method.
@@ -59,7 +59,7 @@ namespace BindingProxy.Fody
             return typeDef;
         }
 
-        private void AddCtorMethod(TypeDefinition typeDef, MethodReference baseCtorRef, TypeReference sourceTypeRef)
+        private void AddCtorMethod(TypeDefinition typeDef, MethodReference baseCtorRef, TypeReference sourceTypeRef, FieldDefinition field)
         {
             const MethodAttributes attributes = MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
             MethodDefinition methodDef = new MethodDefinition(".ctor", attributes, TypeSystem.VoidReference);
@@ -71,6 +71,7 @@ namespace BindingProxy.Fody
             instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
             instructions.Add(Instruction.Create(OpCodes.Ldarg_1));
             instructions.Add(Instruction.Create(OpCodes.Call, baseCtorRef));
+            instructions.Add(Instruction.Create(OpCodes.Nop));
             instructions.Add(Instruction.Create(OpCodes.Nop));
             instructions.Add(Instruction.Create(OpCodes.Ret));
             body.OptimizeMacros();

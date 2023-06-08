@@ -34,11 +34,11 @@ namespace BindingProxy.Fody
 {
     public partial class ModuleWeaver
     {
-        private const string WOVEN_METHOD_INVOKER_NAME = "Loxodon.Framework.Binding.Proxy.Sources.Object.WovenMethodInvoker`1";
+        private const string WOVEN_METHOD_INVOKER_NAME = "Loxodon.Framework.Binding.Proxy.Sources.Weaving.WovenMethodNodeProxy`1";
         private const string WOVEN_INVOKER_NAME_PREFIX = "Loxodon.Framework.Binding.IInvoker`";
-        private const string METHOD_INVOKER_NAME_SUFFIX = "MethodInvoker";
+        private const string METHOD_NODE_PROXY_NAME_SUFFIX = "MethodNodeProxy";
 
-        protected TypeDefinition CreateMethodInvoker(TypeDefinition sourceTypeDef, string methodName, List<MethodDefinition> methods)
+        protected TypeDefinition CreateMethodProxy(TypeDefinition sourceTypeDef, string methodName, List<MethodDefinition> methods)
         {
             var sourceTypeRef = ModuleDefinition.ImportReference(sourceTypeDef.MakeGeneric());
             var genericBaseTypeDef = FindTypeDefinition(WOVEN_METHOD_INVOKER_NAME);
@@ -46,13 +46,13 @@ namespace BindingProxy.Fody
             var sourceFieldRef = ModuleDefinition.ImportReference(genericBaseTypeDef.Fields.FirstOrDefault(x => x.Name == "source")).MakeHostInstanceGeneric(sourceTypeRef);
             var baseCtorRef = ModuleDefinition.ImportReference(genericBaseTypeDef.GetConstructors().FirstOrDefault()).MakeHostInstanceGeneric(sourceTypeRef);
 
-            const TypeAttributes typeAttributes = TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.BeforeFieldInit;
-            var typeDef = new TypeDefinition(null, methodName + METHOD_INVOKER_NAME_SUFFIX, typeAttributes, genericInstanceBaseTypeRef);
+            const TypeAttributes typeAttributes = TypeAttributes.Class | TypeAttributes.NestedPrivate | TypeAttributes.BeforeFieldInit;
+            var typeDef = new TypeDefinition(null, methodName + METHOD_NODE_PROXY_NAME_SUFFIX, typeAttributes, genericInstanceBaseTypeRef);
             typeDef.CloneGenericParameters(sourceTypeDef);
 
             List<MethodDefinition> invokers = new List<MethodDefinition>();
             //add constructor method.
-            AddInvokerCtorMethod(typeDef, baseCtorRef, sourceTypeRef);
+            AddCtorMethod(typeDef, baseCtorRef, sourceTypeRef);
             //add interfaces
             foreach (MethodDefinition method in methods)
             {
@@ -76,7 +76,7 @@ namespace BindingProxy.Fody
             return parameterRefs;
         }
 
-        private void AddInvokerCtorMethod(TypeDefinition typeDef, MethodReference baseCtorRef, TypeReference sourceTypeRef)
+        private void AddCtorMethod(TypeDefinition typeDef, MethodReference baseCtorRef, TypeReference sourceTypeRef)
         {
             const MethodAttributes attributes = MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
             MethodDefinition methodDef = new MethodDefinition(".ctor", attributes, TypeSystem.VoidReference);
