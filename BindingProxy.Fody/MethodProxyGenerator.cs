@@ -62,7 +62,10 @@ namespace BindingProxy.Fody
             }
 
             AddInvokeMethod(typeDef, invokers);
-            AddTypeAttributes(typeDef);
+
+            AddGeneratedCodeAttribute(typeDef);
+            AddDebuggerNonUserCodeAttribute(typeDef);
+            AddPreserveAttribute(typeDef);
             return typeDef;
         }
 
@@ -92,6 +95,7 @@ namespace BindingProxy.Fody
             instructions.Add(Instruction.Create(OpCodes.Nop));
             instructions.Add(Instruction.Create(OpCodes.Ret));
             body.OptimizeMacros();
+            AddPreserveAttribute(methodDef);
             typeDef.Methods.Add(methodDef);
         }
 
@@ -179,6 +183,7 @@ namespace BindingProxy.Fody
             instructions.Add(end);
             instructions.Add(Instruction.Create(OpCodes.Ret));
             body.OptimizeMacros();
+            AddPreserveAttribute(methodDef);
             typeDef.Methods.Add(methodDef);
         }
 
@@ -250,7 +255,8 @@ namespace BindingProxy.Fody
             instructions.Add(ldloc);
             instructions.Add(Instruction.Create(OpCodes.Ret));
             body.OptimizeMacros();
-            typeDef.Methods.Add(methodDef);
+            AddPreserveAttribute(methodDef);
+            typeDef.Methods.Add(methodDef);           
             return methodDef;
         }
     }

@@ -50,7 +50,8 @@ namespace BindingProxy.Fody
             var proxyFinderImplTypeRef = ModuleDefinition.ImportReference(proxyFinderImplTypeDef);
             const FieldAttributes fieldAttributes = FieldAttributes.Private;
             var fieldDef = new FieldDefinition("_finder", fieldAttributes, proxyFinderImplTypeRef);
-            AddTypeAttributes(fieldDef);
+            AddGeneratedCodeAttribute(typeDef);
+            AddDebuggerNonUserCodeAttribute(typeDef);
             typeDef.Fields.Add(fieldDef);
 
             //Implement the IWovenNodeProxyFinder interface
@@ -59,7 +60,9 @@ namespace BindingProxy.Fody
             const MethodAttributes methodAttributes = MethodAttributes.Private | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Virtual;
             var methodDef = new MethodDefinition(proxyFinderInterfaceTypeDef.FullName + ".GetSourceProxy", methodAttributes, sourceProxyTypeRef);
             methodDef.Parameters.Add(new ParameterDefinition("name", ParameterAttributes.None, TypeSystem.StringReference));
-            AddTypeAttributes(methodDef);
+            AddGeneratedCodeAttribute(typeDef);
+            AddDebuggerNonUserCodeAttribute(typeDef);
+            AddPreserveAttribute(typeDef);
 
             var originalMethodDef = proxyFinderInterfaceTypeDef.Methods.FirstOrDefault(x => x.Name.Equals("GetSourceProxy"));
             var originalMethodRef = ModuleDefinition.ImportReference(originalMethodDef);
@@ -103,7 +106,8 @@ namespace BindingProxy.Fody
 
             instructions.Add(end);
             instructions.Add(Instruction.Create(OpCodes.Ret));
-
+            body.OptimizeMacros();
+            this.AddPreserveAttribute(methodDef);
             typeDef.Methods.Add(methodDef);
         }
     }

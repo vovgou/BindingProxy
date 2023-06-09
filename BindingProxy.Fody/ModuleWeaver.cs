@@ -188,7 +188,16 @@ namespace BindingProxy.Fody
             return false;
         }
 
-        protected void AddTypeAttributes(IMemberDefinition member)
+        protected void AddDebuggerNonUserCodeAttribute(IMemberDefinition member)
+        {
+            if (member is TypeDefinition || member is PropertyDefinition || member is MethodDefinition)
+            {
+                var debuggerConstructor = ModuleDefinition.ImportReference(typeof(DebuggerNonUserCodeAttribute).GetConstructor(Type.EmptyTypes));
+                member.CustomAttributes.Add(new CustomAttribute(debuggerConstructor));
+            }
+        }
+
+        protected void AddGeneratedCodeAttribute(IMemberDefinition member)
         {
             if (member is TypeDefinition || member is PropertyDefinition || member is FieldDefinition || member is MethodDefinition)
             {
@@ -205,36 +214,19 @@ namespace BindingProxy.Fody
                 generatedAttribute.ConstructorArguments.Add(new CustomAttributeArgument(TypeSystem.StringReference, version));
                 member.CustomAttributes.Add(generatedAttribute);
             }
-            if (member is TypeDefinition || member is PropertyDefinition || member is MethodDefinition)
-            {
-                var debuggerConstructor = ModuleDefinition.ImportReference(typeof(DebuggerNonUserCodeAttribute).GetConstructor(Type.EmptyTypes));
-                var debuggerAttribute = new CustomAttribute(debuggerConstructor);
-                member.CustomAttributes.Add(debuggerAttribute);
-            }
-
-            if (member is TypeDefinition)
-            {
-                var preserveConstructor = ModuleDefinition.ImportReference(FindTypeDefinition(PRESERVE_ATTRIBUTE).GetConstructors().FirstOrDefault());
-                var preserveAttribute = new CustomAttribute(preserveConstructor);
-                member.CustomAttributes.Add(preserveAttribute);
-            }
         }
 
-        static void RemoveAttributes(TypeDefinition typeDef)
+        protected void AddPreserveAttribute(IMemberDefinition member)
         {
-            var customAttributes = typeDef.CustomAttributes;
-            foreach (var attribute in customAttributes.ToArray())
-            {
-                if (BINDING_PROXY_NAMESPACE.Equals(attribute.AttributeType.Namespace))
-                    customAttributes.Remove(attribute);
-            }
+            var preserveConstructor = ModuleDefinition.ImportReference(FindTypeDefinition(PRESERVE_ATTRIBUTE).GetConstructors().FirstOrDefault());
+            member.CustomAttributes.Add(new CustomAttribute(preserveConstructor));
         }
 
-        static void RemoveAttributes(Collection<PropertyDefinition> properties)
+        static void RemoveAttributes<T>(Collection<T> members) where T : IMemberDefinition
         {
-            foreach (var property in properties)
+            foreach (var member in members)
             {
-                var customAttributes = property.CustomAttributes;
+                var customAttributes = member.CustomAttributes;
                 foreach (var attribute in customAttributes.ToArray())
                 {
                     if (BINDING_PROXY_NAMESPACE.Equals(attribute.AttributeType.Namespace))
@@ -243,22 +235,9 @@ namespace BindingProxy.Fody
             }
         }
 
-        static void RemoveAttributes(Collection<FieldDefinition> fields)
+        static void RemoveAttributes(IMemberDefinition member)
         {
-            foreach (var field in fields)
-            {
-                var customAttributes = field.CustomAttributes;
-                foreach (var attribute in customAttributes.ToArray())
-                {
-                    if (BINDING_PROXY_NAMESPACE.Equals(attribute.AttributeType.Namespace))
-                        customAttributes.Remove(attribute);
-                }
-            }
-        }
-
-        static void RemoveAttributes(MethodDefinition method)
-        {
-            var customAttributes = method.CustomAttributes;
+            var customAttributes = member.CustomAttributes;
             foreach (var attribute in customAttributes.ToArray())
             {
                 if (BINDING_PROXY_NAMESPACE.Equals(attribute.AttributeType.Namespace))

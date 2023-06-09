@@ -55,7 +55,9 @@ namespace BindingProxy.Fody
             //add SetValue method.
             AddSetMethod(typeDef, sourceFieldRef, sourceTypeRef, property);
 
-            AddTypeAttributes(typeDef);
+            AddGeneratedCodeAttribute(typeDef);
+            AddDebuggerNonUserCodeAttribute(typeDef);
+            AddPreserveAttribute(typeDef);
             return typeDef;
         }
 
@@ -76,6 +78,7 @@ namespace BindingProxy.Fody
             instructions.Add(Instruction.Create(OpCodes.Nop));
             instructions.Add(Instruction.Create(OpCodes.Ret));
             body.OptimizeMacros();
+            AddPreserveAttribute(methodDef);
             typeDef.Methods.Add(methodDef);
         }
 
@@ -101,6 +104,7 @@ namespace BindingProxy.Fody
             instructions.Add(ldloc);
             instructions.Add(Instruction.Create(OpCodes.Ret));
             body.OptimizeMacros();
+            AddPreserveAttribute(methodDef);
             typeDef.Methods.Add(methodDef);
         }
 
@@ -138,6 +142,7 @@ namespace BindingProxy.Fody
                 instructions.Add(Instruction.Create(OpCodes.Throw));
             }
             body.OptimizeMacros();
+            AddPreserveAttribute(methodDef);
             typeDef.Methods.Add(methodDef);
         }
     }
