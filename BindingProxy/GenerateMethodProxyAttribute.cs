@@ -27,7 +27,7 @@ using System;
 namespace BindingProxy
 {
     [AttributeUsage(AttributeTargets.Method)]
-    public class GenerateInvokerAttribute : Attribute
+    public class GenerateMethodProxyAttribute : Attribute
     {
     }
 }

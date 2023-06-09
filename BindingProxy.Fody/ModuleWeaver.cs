@@ -38,7 +38,7 @@ namespace BindingProxy.Fody
     {
         const string PROPERTY_PROXY_ATTRIBUTE = "GeneratePropertyProxyAttribute";
         const string FIELD_PROXY_ATTRIBUTE = "GenerateFieldProxyAttribute";
-        const string METHOD_INVOKER_ATTRIBUTE = "GenerateInvokerAttribute";
+        const string METHOD_PROXY_ATTRIBUTE = "GenerateMethodProxyAttribute";
         const string IGNORE_ATTRIBUTE = "IgnoreAttribute";
         const string PRESERVE_ATTRIBUTE = "UnityEngine.Scripting.PreserveAttribute";
         const string BINDING_PROXY_NAMESPACE = "BindingProxy";
@@ -128,7 +128,7 @@ namespace BindingProxy.Fody
             Dictionary<string, List<MethodDefinition>> methods = new Dictionary<string, List<MethodDefinition>>();
             foreach (var method in GetMethods(typeDef))
             {
-                if (!HasProxyAttribute(method, METHOD_INVOKER_ATTRIBUTE))
+                if (!HasProxyAttribute(method, METHOD_PROXY_ATTRIBUTE))
                     continue;
 
                 RemoveAttributes(method);
