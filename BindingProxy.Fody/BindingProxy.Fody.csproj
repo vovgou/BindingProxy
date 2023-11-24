@@ -4,7 +4,7 @@
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<SignAssembly>true</SignAssembly>
 		<Authors>Clark Yang</Authors>
-		<Description>BindingProxy</Description>
+		<Description>BindingProxy.Fody</Description>
 		<PackageTags>MVVM,DataBinding,ILWeaving,Fody</PackageTags>
 		<PackageIconUrl>https://avatars.githubusercontent.com/u/2171221?v=4</PackageIconUrl>
 		<PackageProjectUrl>https://github.com/vovgou/BindingProxy</PackageProjectUrl>
